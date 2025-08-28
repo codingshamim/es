@@ -1,13 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
-// pages/404.js (for Pages Router) or app/not-found.js (for App Router)
 "use client";
 import React from "react";
 import { Home, ArrowLeft, Search, Mail } from "lucide-react";
-import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function Custom404() {
+export default function NotFound() {
   const router = useRouter();
 
   const handleGoBack = () => {
@@ -15,17 +13,7 @@ export default function Custom404() {
   };
 
   return (
-    <>
-      <Head>
-        <title>404 - Page Not Found | ESVIBES</title>
-        <meta
-          name="description"
-          content="The page you're looking for doesn't exist."
-        />
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
-
-      <div className="bg-black min-h-screen flex items-center justify-center text-white">
+    <div className="bg-black min-h-screen flex items-center justify-center text-white">
         <div className="max-w-2xl mx-auto px-6 text-center">
           {/* Large 404 Text */}
           <div className="mb-8">
@@ -133,15 +121,5 @@ export default function Custom404() {
           </div>
         </div>
       </div>
-    </>
   );
-}
-
-// Optional: Add this for better SEO and error tracking
-export async function getStaticProps() {
-  return {
-    props: {
-      statusCode: 404,
-    },
-  };
 }
