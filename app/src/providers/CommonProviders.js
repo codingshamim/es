@@ -15,28 +15,40 @@ export default function CommonProviders({ children }) {
     toastSuccess: true,
     mode: "",
     quantity: 0,
-    hamburger : false,
-    modalMode : "",
-    shippingOption :  {
+    hamburger: false,
+    modalMode: "",
+    isOpenModal: false,
+    shippingOption: {
       title: "Inside of Dhaka",
       fee: 40,
     },
-    discountApplied : 0,
-    deleteProduct : {
-      isOpen : false,
-      productId:"",
-      title:"",
-      sku : "",
-      thumbnail : ""
-
-    }
-
+    modalTitle: "",
+    discountApplied: 0,
+    deleteProduct: {
+      productId: "",
+      title: "",
+      sku: "",
+      thumbnail: "",
+    },
+    deleteOrder: {
+      orderId: "",
+      transactionId: "",
+    },
   });
   const [checkout, setCheckout] = useState([]);
   const [discountPercentage, setDiscountPercentage] = useState(null);
 
   return (
-    <CommonContext.Provider value={{ common, setCommon, checkout, setCheckout, discountPercentage, setDiscountPercentage }}>
+    <CommonContext.Provider
+      value={{
+        common,
+        setCommon,
+        checkout,
+        setCheckout,
+        discountPercentage,
+        setDiscountPercentage,
+      }}
+    >
       {children}
     </CommonContext.Provider>
   );

@@ -8,6 +8,8 @@ import { checkAdmin } from "./product.action";
 import { UserModel } from "../backend/models/UserModel";
 
 import { calculateOrdersTotal } from "@/helpers/calculateOrdersTotal";
+import mongoose from "mongoose";
+import { revalidatePath } from "next/cache";
 
 /**
  * Get paginated and filtered list of orders
@@ -69,7 +71,7 @@ export default async function getOrders(
         .sort({ createdAt: -1 }) // latest orders first
         .limit(validLimit)
         .skip(skip)
-        .populate({ path: "user", model: UserModel, select : ['name', 'phone'] })
+        .populate({ path: "user", model: UserModel, select: ["name", "phone"] })
         .lean(),
     ]);
 
@@ -108,3 +110,139 @@ export default async function getOrders(
     };
   }
 }
+
+export const getOrder = async (orderId) => {
+  try {
+    await dbConnect();
+
+    const order = await orderModel
+      .findById(orderId)
+      .populate({ path: "user", model: UserModel, select: ["name", "phone"] })
+      .lean();
+
+    if (!order) {
+      return {
+        error: true,
+        message: "Order not found",
+      };
+    }
+
+    return {
+      error: false,
+      order: formateMongo(order),
+    };
+  } catch (err) {
+    console.error("Error fetching order:", err);
+    return {
+      error: true,
+      message: "Failed to fetch order. Please try again later.",
+    };
+  }
+};
+
+export const totalOrderByUser = async (userId) => {
+  try {
+    await dbConnect();
+
+    // Convert userId to ObjectId if it's a string
+    const userObjectId = mongoose.Types.ObjectId.isValid(userId)
+      ? new mongoose.Types.ObjectId(userId)
+      : userId;
+
+    const result = await orderModel.aggregate([
+      { $match: { user: userObjectId } }, // filter orders by user
+      {
+        $group: {
+          _id: null,
+          totalOrder: { $sum: 1 }, // count total order documents
+          totalValue: {
+            $sum: {
+              $add: [
+                {
+                  $sum: {
+                    $map: {
+                      input: "$orders",
+                      as: "item",
+                      in: { $multiply: ["$$item.price", "$$item.quantity"] },
+                    },
+                  },
+                },
+                "$shippingOption.fee", // add shipping fee
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalOrder: 1,
+          totalValue: 1,
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0] : { totalOrder: 0, totalValue: 0 };
+  } catch (err) {
+    console.error("Error fetching total orders by user:", err);
+    return { totalOrder: 0, totalValue: 0 }; // safe fallback
+  }
+};
+
+export const updateStatus = async (orderId, status) => {
+  const allStatus = [
+    "Pending",
+    "Processing",
+    "Shipped",
+    "Delivered",
+    "Cancelled",
+  ];
+  if (!allStatus.includes(status)) {
+    return {
+      error: true,
+      message: "Invalid status value",
+    };
+  }
+  try {
+    await dbConnect();
+    const isAdmin = await checkAdmin();
+    if (isAdmin) {
+      await orderModel.findByIdAndUpdate(orderId, { delivered: status });
+      revalidatePath("/");
+      return {
+        error: false,
+        message: "Order status updated successfully",
+      };
+    } else {
+      return {
+        error: true,
+        message: "You are not authorized to update this order",
+      };
+    }
+  } catch (err) {
+    return {
+      error: true,
+      message: "Something went wrong !",
+    };
+  }
+};
+
+export const deleteOrder = async (orderId) => {
+  try {
+    await dbConnect();
+    if (orderId) {
+      await orderModel.findByIdAndDelete(orderId);
+      revalidatePath("/");
+      return {
+        error: false,
+        message: "Order deleted successfully!",
+        ok: true,
+      };
+    }
+  } catch (err) {
+    return {
+      error: true,
+      message: err.message,
+    };
+  }
+};

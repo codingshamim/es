@@ -159,7 +159,6 @@ const createProduct = async (formData) => {
 
     // Create the product
     const newProduct = await ProductModel.create(productData);
-    console.log("Product created successfully:", newProduct._id);
 
     // Revalidate paths
     revalidatePath("/");

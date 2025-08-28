@@ -4,25 +4,49 @@ import { useState } from "react";
 import useCommonState from "@/app/src/hooks/useCommonState";
 import DeleteProductModalContent from "./DeleteProductModalContent";
 import { deleteProductById } from "@/app/actions/product.action";
+import { deleteOrder } from "@/app/actions/order.action";
 
 export default function ConfirmationModal() {
   const { common, setCommon } = useCommonState();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const closeHandler = () => {
-    if (common?.modalMode === "delete-product") {
-      setCommon((prev) => ({
-        ...prev,
-        deleteProduct: {
-          title: "",
-          sku: "",
-          thumbnail: "",
-          isOpen: false,
-        },
-      }));
-    }
+    setCommon((prev) => ({
+      ...prev,
+      isOpenModal: false,
+      deleteProduct: {
+        title: "",
+        sku: "",
+        thumbnail: "",
+      },
+    }));
   };
-
+  let content = null;
+  let buttonContent = "";
+  if (common?.modalMode === "delete-product") {
+    buttonContent = "Delete Product";
+  } else if (common?.modalMode === "delete-order") {
+    buttonContent = "Delete Order";
+  }
+  if (common?.modalMode === "delete-product") {
+    content = (
+      <DeleteProductModalContent
+        thumbnail={
+          common?.deleteProduct?.thumbnail
+            ? common?.deleteProduct?.thumbnail
+            : ""
+        }
+        title={common?.deleteProduct?.title || ""}
+        sku={common?.deleteProduct?.sku || ""}
+      />
+    );
+  } else if (common?.modalMode === "delete-order") {
+    content = (
+      <p className="text-sm mt-4 mb-2">
+        Are you sure you want to delete this order? This action cannot be undone
+      </p>
+    );
+  }
   let handler;
 
   if (common?.modalMode === "delete-product") {
@@ -38,23 +62,34 @@ export default function ConfirmationModal() {
         setIsDeleting(false);
       }
     };
+  } else if (common?.modalMode === "delete-order") {
+    handler = async () => {
+      setIsDeleting(true);
+      try {
+        await deleteOrder(common?.deleteOrder?.orderId);
+        closeHandler();
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        // Handle error appropriately
+      } finally {
+        setIsDeleting(false);
+      }
+    };
   }
 
   return (
     <>
-      {common?.deleteProduct?.isOpen && (
+      {common?.isOpenModal && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
-            common?.deleteProduct?.isOpen
-              ? "opacity-100 visible"
-              : "opacity-0 invisible"
+            common?.isOpenModal ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
         >
           {/* Backdrop with blur effect */}
           <div
             id="modalBackdrop"
             className={`absolute inset-0 bg-black/60 backdrop-blur-md transition-all duration-300 ${
-              common?.deleteProduct?.isOpen ? "opacity-100" : "opacity-0"
+              common?.isOpenModal ? "opacity-100" : "opacity-0"
             }`}
             onClick={closeHandler}
           />
@@ -63,12 +98,12 @@ export default function ConfirmationModal() {
           <div
             id="modalContainer"
             className={`relative bg-gradient-to-br from-gray-800/95 to-gray-900/95 backdrop-blur-xl rounded-3xl border border-gray-700/50 shadow-2xl max-w-md w-full mx-4 transition-all duration-300 ease-out ${
-              common?.deleteProduct?.isOpen
+              common?.isOpenModal
                 ? "transform scale-100 translate-y-0 opacity-100"
                 : "transform scale-90 translate-y-4 opacity-0"
             }`}
             style={{
-              animation: common?.deleteProduct?.isOpen
+              animation: common?.isOpenModal
                 ? "modalSlideIn 0.3s ease-out forwards"
                 : "none",
             }}
@@ -97,22 +132,12 @@ export default function ConfirmationModal() {
               {/* Title */}
               <div className="text-center mb-2">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  {common?.modalMode === "delete-product" && "Delete Product?"}
+                  {common?.modalTitle}
                 </h2>
                 <div className="h-1 w-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full mx-auto mb-4" />
               </div>
 
-              {common?.modalMode === "delete-product" && (
-                <DeleteProductModalContent
-                  thumbnail={
-                    common?.deleteProduct?.thumbnail
-                      ? common?.deleteProduct?.thumbnail
-                      : ""
-                  }
-                  title={common?.deleteProduct?.title || ""}
-                  sku={common?.deleteProduct?.sku || ""}
-                />
-              )}
+              {content}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
@@ -137,7 +162,7 @@ export default function ConfirmationModal() {
                       Deleting...
                     </>
                   ) : (
-                    "Delete Product"
+                    buttonContent
                   )}
                 </button>
               </div>

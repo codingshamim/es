@@ -2,31 +2,25 @@
 
 import useCommonState from "@/app/src/hooks/useCommonState";
 
-export default function DeleteProductButton({
-  productId,
-  title,
-  sku,
-  thumbnail,
-}) {
+export default function DeleteOrderButton({ orderId, transactionId }) {
   const { common, setCommon } = useCommonState();
   return (
     <button
       onClick={() =>
         setCommon({
           ...common,
-          modalMode: "delete-product",
+          modalMode: "delete-order",
           isOpenModal: true,
-          deleteProduct: {
-            isOpen: true,
-            id: productId,
-            title: title,
-            thumbnail,
-            sku: sku,
+          deleteOrder: {
+            orderId: orderId,
+            transactionId: transactionId,
           },
+
+          modalTitle: "Delete Order?",
         })
       }
-      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200 tooltip"
-      title="Delete Product"
+      className="text-red-400 hover:text-red-300 p-2 hover:bg-red-400/10 rounded-lg transition-all"
+      title="Delete Order"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

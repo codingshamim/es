@@ -1,8 +1,8 @@
 import CommonProviders from "@/app/src/providers/CommonProviders";
-import "../../globals.css";
-import TopHeader from "./_components/Header/TopHeader";
-import Sidebar from "./_components/Sidebar/Sidebar";
-import ConfirmationModal from "./_components/ConfirmationModal";
+import "../globals.css";
+import TopHeader from "./creator/_components/Header/TopHeader";
+import Sidebar from "./creator/_components/Sidebar/Sidebar";
+import ConfirmationModal from "./creator/_components/ConfirmationModal";
 
 export default async function RootLayout({ children }) {
   return (

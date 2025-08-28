@@ -302,8 +302,11 @@ const makeCheckout = async (checkout) => {
         }
 
         // Check if stock field exists and is a valid number
-        if (typeof product.stock !== 'number' || product.stock < 0) {
-          console.warn(`Product ${productId} has invalid stock value:`, product.stock);
+        if (typeof product.stock !== "number" || product.stock < 0) {
+          console.warn(
+            `Product ${productId} has invalid stock value:`,
+            product.stock
+          );
           // If stock is not properly set, assume unlimited stock for now
           return { product, hasStock: true };
         }
@@ -311,7 +314,9 @@ const makeCheckout = async (checkout) => {
         // Check stock availability
         if (product.stock < order.quantity) {
           throw new Error(
-            `Insufficient stock for "${product.title || 'Unknown Product'}". Available: ${product.stock}, Requested: ${order.quantity}`
+            `Insufficient stock for "${
+              product.title || "Unknown Product"
+            }". Available: ${product.stock}, Requested: ${order.quantity}`
           );
         }
 
@@ -378,42 +383,50 @@ const makeCheckout = async (checkout) => {
         const productId = order.productId._id || order.productId;
         const quantity = parseInt(order.quantity);
 
-      
-
         try {
           // Fixed: Use findOneAndUpdate with better error handling
           const updateResult = await ProductModel.findOneAndUpdate(
-            { 
+            {
               _id: new mongoose.Types.ObjectId(productId),
-              stock: { $gte: quantity } // Ensure we don't go negative
+              stock: { $gte: quantity }, // Ensure we don't go negative
             },
-            { 
-              $inc: { stock: -quantity }
+            {
+              $inc: { stock: -quantity },
             },
-            { 
+            {
               session,
               new: true, // Return updated document
-              runValidators: true // Run model validators
+              runValidators: true, // Run model validators
             }
           );
 
           if (!updateResult) {
             // Fixed: Better error message for stock update failure
-            const currentProduct = await ProductModel.findById(productId).session(session);
+            const currentProduct = await ProductModel.findById(
+              productId
+            ).session(session);
             if (!currentProduct) {
-              throw new Error(`Product not found during stock update: ${productId}`);
+              throw new Error(
+                `Product not found during stock update: ${productId}`
+              );
             } else {
-              throw new Error(`Insufficient stock for product. Available: ${currentProduct.stock}, Requested: ${quantity}`);
+              throw new Error(
+                `Insufficient stock for product. Available: ${currentProduct.stock}, Requested: ${quantity}`
+              );
             }
           }
 
           // Log successful stock update
-       
 
           return updateResult;
         } catch (error) {
-          console.error(`❌ Error updating stock for product ${productId}:`, error);
-          throw new Error(`Failed to update inventory for product: ${productId} - ${error.message}`);
+          console.error(
+            `❌ Error updating stock for product ${productId}:`,
+            error
+          );
+          throw new Error(
+            `Failed to update inventory for product: ${productId} - ${error.message}`
+          );
         }
       });
 
@@ -422,7 +435,6 @@ const makeCheckout = async (checkout) => {
 
       // Commit the transaction
       await session.commitTransaction();
-      console.log("✅ Transaction committed successfully");
 
       // Clear user's cart after successful order
       await cartModel.deleteMany({
@@ -433,46 +445,47 @@ const makeCheckout = async (checkout) => {
       revalidatePath("/");
       revalidatePath("/products");
       revalidatePath("/cart");
-      
+
       return {
         error: false,
         message: "Order placed successfully",
         data: {
           orderId: formateMongo(response)[0]?._id,
           transactionId: formateMongo(response)[0]?.transactionId,
-          name : checkout?.address?.name || "Customer",
+          name: checkout?.address?.name || "Customer",
         },
       };
-
     } catch (transactionError) {
       await session.abortTransaction();
       console.error("❌ Transaction error during checkout:", transactionError);
-      
+
       // Return user-friendly error message
-      if (transactionError.message.includes('stock') || transactionError.message.includes('inventory')) {
+      if (
+        transactionError.message.includes("stock") ||
+        transactionError.message.includes("inventory")
+      ) {
         return {
           error: true,
           message: transactionError.message,
         };
       }
-      
+
       throw transactionError;
     } finally {
       session.endSession();
     }
-
   } catch (err) {
     console.error("❌ Checkout error:", err);
 
     // Handle specific error types
-    if (err.name === 'ValidationError') {
+    if (err.name === "ValidationError") {
       return {
         error: true,
         message: "Invalid data provided. Please check your order details.",
       };
     }
 
-    if (err.name === 'MongoServerError' && err.code === 11000) {
+    if (err.name === "MongoServerError" && err.code === 11000) {
       return {
         error: true,
         message: "Duplicate order detected. Please try again.",

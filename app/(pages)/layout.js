@@ -7,7 +7,6 @@ import ToastContainer from "@/app/components/ToastContainer";
 
 import ModalContainer from "@/app/(pages)/tshirt/[slug]/_components/ModalContainer";
 import BuyModal from "../components/BuyModal/BuyModal";
-import ConfirmationModal from "../(admin-panel)/creator/_components/ConfirmationModal";
 
 export const metadata = {
   title: "Esvibes - Home",
@@ -29,7 +28,6 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body className="min-h-screen pb-[100px] dark:bg-[#000] dark:text-white max-w-5xl mx-auto py-6 px-6">
         <CommonProviders>
-       
           <ToastContainer />
           <ModalContainer />
           <BuyModal />
